@@ -174,11 +174,15 @@ class TradingAlgorithm(object):
         self.initialize(*args, **kwargs)
 
     def initialize(self, *args, **kwargs):
+        # store algo reference in global space
         set_algo_instance(self)
+
         self._initialize(self)
 
+        # clear algo reference from global space
+        set_algo_instance(None)
+
     def handle_data(self, data):
-        set_algo_instance(self)
         self._handle_data(self, data)
 
     def __repr__(self):
@@ -358,6 +362,9 @@ class TradingAlgorithm(object):
         # create transforms and zipline
         self.gen = self._create_generator(sim_params)
 
+        # store algo reference in global space
+        set_algo_instance(self)
+
         # loop through simulated_trading, each iteration returns a
         # perf dictionary
         perfs = []
@@ -366,6 +373,9 @@ class TradingAlgorithm(object):
 
         # convert perf dict to pandas dataframe
         daily_stats = self._create_daily_stats(perfs)
+
+        # remove algo from global space
+        set_algo_instance(None)
 
         return daily_stats
 
