@@ -1,3 +1,4 @@
+
 #
 # Copyright 2013 Quantopian, Inc.
 #
@@ -27,13 +28,20 @@ from zipline.test_algorithms import (TestRegisterTransformAlgorithm,
                                      TestTargetAlgorithm,
                                      TestOrderPercentAlgorithm,
                                      TestTargetPercentAlgorithm,
-                                     TestTargetValueAlgorithm)
+                                     TestTargetValueAlgorithm,
+                                     initialize_noop,
+                                     handle_data_noop,
+                                     initialize_api,
+                                     handle_data_api,
+                                     noop_algo,
+                                     api_algo)
 
 from zipline.sources import (SpecificEquityTrades,
                              DataFrameSource,
                              DataPanelSource)
 from zipline.transforms import MovingAverage
 from zipline.finance.trading import SimulationParameters
+from zipline import TradingAlgorithm
 
 
 class TestRecordAlgorithm(TestCase):
@@ -193,4 +201,36 @@ class TestTransformAlgorithm(TestCase):
                                          data_frequency='daily',
                                          instant_fill=True)
 
+        algo.run(self.df)
+
+
+class TestQuantopianScript(TestCase):
+    def setUp(self):
+        self.sim_params = factory.create_simulation_parameters(num_days=4)
+        trade_history = factory.create_trade_history(
+            133,
+            [10.0, 10.0, 11.0, 11.0],
+            [100, 100, 100, 300],
+            timedelta(days=1),
+            self.sim_params
+        )
+
+        self.source = SpecificEquityTrades(event_list=trade_history)
+        self.df_source, self.df = \
+            factory.create_test_df_source(self.sim_params)
+
+    def test_noop(self):
+        algo = TradingAlgorithm(initialize_noop, handle_data_noop)
+        algo.run(self.df)
+
+    def test_noop_string(self):
+        algo = TradingAlgorithm(noop_algo)
+        algo.run(self.df)
+
+    def test_api_calls(self):
+        algo = TradingAlgorithm(initialize_api, handle_data_api)
+        algo.run(self.df)
+
+    def test_api_calls_string(self):
+        algo = TradingAlgorithm(api_algo)
         algo.run(self.df)
